@@ -1,0 +1,4 @@
+# Artifacts that will be built during image creation.
+# This should contain all files created during `yarn build`.
+front/build
+front/node_modules
