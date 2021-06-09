@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -24,6 +25,36 @@ func main() {
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*.html")
 
+	///////////////////
+	// JSON
+	///////////////////
+	router.GET("/users", func(ctx *gin.Context) {
+		db := sqlConnect()
+		var users []User
+		db.Order("created_at asc").Find(&users)
+		defer db.Close()
+		ctx.JSON(http.StatusOK, gin.H{
+			"users": users,
+		})
+	})
+
+	router.POST("/users", func(ctx *gin.Context) {
+		db := sqlConnect()
+		name := ctx.PostForm("name")
+		email := ctx.PostForm("email")
+		fmt.Println("create user " + name + " with email " + email)
+		db.Create(&User{Name: name, Email: email})
+		defer db.Close()
+		ctx.JSON(http.StatusOK, gin.H{
+			"message": "success",
+			"name":    name,
+			"email":   email,
+		})
+	})
+
+	///////////////////
+	// テンプレート
+	///////////////////
 	router.GET("/", func(ctx *gin.Context) {
 		db := sqlConnect()
 		var users []User
