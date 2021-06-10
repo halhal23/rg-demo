@@ -8,11 +8,14 @@ RUN mkdir /go/src/app
 WORKDIR /go/src/app
 # ホストのファイルをコンテナの作業ディレクトリに移行
 ADD . /go/src/app
+
 # ホットリロードを提供するライブラリ
 RUN go get -u github.com/oxequa/realize 
 # gin
 RUN go get github.com/gin-gonic/gin
+RUN go get github.com/gin-contrib/cors
 # gorm
 RUN go get github.com/go-sql-driver/mysql
 RUN go get github.com/jinzhu/gorm
+
 CMD ["realize", "start"]

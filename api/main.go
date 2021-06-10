@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -26,6 +27,40 @@ func main() {
 	router.LoadHTMLGlob("templates/*.html")
 
 	///////////////////
+	// CORS
+	///////////////////
+	router.Use(cors.New(cors.Config{
+		// 許可したいHTTPメソッドの一覧
+		AllowMethods: []string{
+			"POST",
+			"GET",
+			"OPTIONS",
+			"PUT",
+			"DELETE",
+		},
+		// 許可したいHTTPリクエストヘッダの一覧
+		AllowHeaders: []string{
+			"Access-Control-Allow-Headers",
+			"Content-Type",
+			"Content-Length",
+			"Accept-Encoding",
+			"X-CSRF-Token",
+			"Authorization",
+		},
+		// 許可したいアクセス元の一覧
+		AllowOrigins: []string{
+			"http://localhost:3000",
+		},
+		// 自分で許可するしないの処理を書きたい場合は、以下のように書くこともできる
+		// AllowOriginFunc: func(origin string) bool {
+		//  return origin == "https://www.example.com:8080"
+		// },
+		// preflight requestで許可した後の接続可能時間
+		// https://godoc.org/github.com/gin-contrib/cors#Config の中のコメントに詳細あり
+		MaxAge: 24 * time.Hour,
+	}))
+
+	///////////////////
 	// JSON
 	///////////////////
 	router.GET("/users", func(ctx *gin.Context) {
@@ -38,17 +73,21 @@ func main() {
 		})
 	})
 
+	type UserParam struct {
+		Name  string
+		Email string
+	}
+
 	router.POST("/users", func(ctx *gin.Context) {
 		db := sqlConnect()
-		name := ctx.PostForm("name")
-		email := ctx.PostForm("email")
-		fmt.Println("create user " + name + " with email " + email)
-		db.Create(&User{Name: name, Email: email})
+		var param UserParam
+		ctx.BindJSON(&param)
+		db.Create(&User{Name: param.Name, Email: param.Email})
 		defer db.Close()
 		ctx.JSON(http.StatusOK, gin.H{
 			"message": "success",
-			"name":    name,
-			"email":   email,
+			"name":    param.Name,
+			"email":   param.Email,
 		})
 	})
 
@@ -95,6 +134,9 @@ func main() {
 	router.Run()
 }
 
+///////////////////
+// SQL setting
+///////////////////
 func sqlConnect() (database *gorm.DB) {
 	DBMS := "mysql"
 	USER := "go_test"
